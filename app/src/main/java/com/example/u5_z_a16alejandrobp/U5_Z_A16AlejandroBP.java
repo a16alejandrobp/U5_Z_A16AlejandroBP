@@ -27,6 +27,7 @@ import java.io.OutputStreamWriter;
 public class U5_Z_A16AlejandroBP extends AppCompatActivity {
     boolean sdDisponhible = false;
     boolean sdAccesoEscritura = false;
+    File filesDir;
     File dirFicheiroSD;
     File rutaCompleta;
     EditText directory_et;
@@ -61,7 +62,7 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
         comprobarEstadoSD();
     }
     public void comprobarEstadoSD() {
-        if(Build.VERSION.SDK_INT>=22){
+        if(Build.VERSION.SDK_INT>=23){
             File[] storages = ContextCompat.getExternalFilesDirs(this, null);
             if (storages.length > 1 && storages[0] != null && storages[1] != null) {
                 sdDisponhible = true;
@@ -87,13 +88,26 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
 
         if (sdDisponhible) {
             // dirFicheiroSD = Environment.getExternalStorageDirectory();
-            if(Build.VERSION.SDK_INT>=22) {
+            if(Build.VERSION.SDK_INT>=23) {
                 File[] storages = ContextCompat.getExternalFilesDirs(this, null);
+                filesDir = storages[1];
                 dirFicheiroSD = storages[1];
-                rutaCompleta = new File(dirFicheiroSD, nomeFicheiro);
+                if(directory_et.getText().toString().equals("")) {
+                    rutaCompleta = new File(dirFicheiroSD, nomeFicheiro);
+                }else{
+                    dirFicheiroSD = new File(dirFicheiroSD.toString()+"/"+directory_et.getText().toString());
+                    rutaCompleta = new File(dirFicheiroSD,nomeFicheiro);
+                }
             }else{
+                filesDir = getExternalFilesDir(null);
                 dirFicheiroSD = getExternalFilesDir(null);
-                rutaCompleta = new File(dirFicheiroSD.getAbsolutePath(), nomeFicheiro);
+                if(directory_et.getText().toString().equals("")) {
+                    rutaCompleta = new File(dirFicheiroSD.getAbsolutePath(), nomeFicheiro);
+                }else{
+                    dirFicheiroSD = new File(dirFicheiroSD.getAbsolutePath()+"/"+directory_et.getText().toString());
+                    rutaCompleta = new File(dirFicheiroSD,nomeFicheiro);
+                }
+
             }
 
         }
@@ -129,6 +143,7 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
         }else if(sd_rb.isChecked()) {
             nomeFicheiro = file_et.getText().toString();
             establecerDirectorioFicheiro();
+                dirFicheiroSD.mkdirs();
             boolean sobrescribir = false;
 
             sobrescribir = !(cb.isChecked());
@@ -223,7 +238,7 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
                     br.close();
 
                 } catch (Exception ex) {
-                    Toast.makeText(this, "Problemas lendo o ficheiro", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error reading file: "+rutaCompleta, Toast.LENGTH_SHORT).show();
                     Log.e("SD", "Erro lendo o ficheiro. ");
 
                 }
@@ -253,13 +268,26 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             nomeFicheiro = file_et.getText().toString();
             establecerDirectorioFicheiro();
             if (sdAccesoEscritura) {
-
-                if (rutaCompleta.delete())
-                    Log.i("SD", "Ficheiro borrado");
-                else {
-                    Log.e("SD", "Problemas borrando o ficheiro");
-                    Toast.makeText(this, "There are problems deleting "+rutaCompleta.toString()+". Maybe is not an empty dir", Toast.LENGTH_SHORT).show();
-
+                if(nomeFicheiro.equals("")){
+                    if (dirFicheiroSD.delete()) {
+                        if(dirFicheiroSD == filesDir){
+                            Toast.makeText(this, "There are problems deleting "+dirFicheiroSD.toString()+". Maybe is not an empty dir", Toast.LENGTH_SHORT).show();
+                        }else {
+                            Log.i("SD", "Ficheiro borrado");
+                            Toast.makeText(this, dirFicheiroSD.toString() + " has been deleted", Toast.LENGTH_LONG).show();
+                        }
+                    }else {
+                        Log.e("SD", "Problemas borrando o ficheiro");
+                        Toast.makeText(this, "There are problems deleting "+dirFicheiroSD.toString()+". Maybe is not an empty dir", Toast.LENGTH_SHORT).show();
+                    }
+                }else{
+                    if (rutaCompleta.delete()) {
+                        Toast.makeText(this,rutaCompleta.toString()+" has been deleted",Toast.LENGTH_LONG).show();
+                        Log.i("SD", "Ficheiro borrado");
+                    }else {
+                        Log.e("SD", "Problemas borrando o ficheiro");
+                        Toast.makeText(this, "There are problems deleting "+rutaCompleta.toString()+". Maybe is not an empty dir", Toast.LENGTH_SHORT).show();
+                    }
                 }
             } else{
                 Toast.makeText(this, "A tarxeta SD non está en modo acceso escritura", Toast.LENGTH_SHORT).show();
@@ -276,7 +304,6 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
         }else if(internal_rb.isChecked()){
             nomeFicheiro = file_et.getText().toString();
             File directorio_app = getFilesDir();
-            // File directorio_app = new File ("/");
 
             tv.append(directorio_app.getAbsolutePath() + " Content:");
             try {
@@ -298,8 +325,11 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             nomeFicheiro = file_et.getText().toString();
             establecerDirectorioFicheiro();
             if (sdDisponhible) {
-
                 tv.append(dirFicheiroSD.getAbsolutePath() + "\nContido:");
+                if(!dirFicheiroSD.exists()){
+                    Toast.makeText(this, "Error listing file: "+dirFicheiroSD.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                }
+
 
                 try {
                     String[] files = dirFicheiroSD.list();
