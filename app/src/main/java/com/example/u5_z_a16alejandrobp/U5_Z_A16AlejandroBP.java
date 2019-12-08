@@ -123,21 +123,36 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             } else {
                 nomeFicheiro = file_et.getText().toString();
                 tv.setText("");
+                if(directory_et.getText().toString().equals("")){
 
-                if (cb.isChecked())
-                    contexto = Context.MODE_PRIVATE;
-                else
-                    contexto = Context.MODE_APPEND;
+                    if (cb.isChecked())
+                        contexto = Context.MODE_PRIVATE;
+                    else
+                        contexto = Context.MODE_APPEND;
 
-                try {
+                    try {
 
-                    OutputStreamWriter osw = new OutputStreamWriter(openFileOutput(nomeFicheiro, contexto));
+                        OutputStreamWriter osw = new OutputStreamWriter(openFileOutput(nomeFicheiro, contexto));
 
-                    osw.write(sentences_et.getText() + "\n");
-                    osw.close();
+                        osw.write(sentences_et.getText() + "\n");
+                        osw.close();
 
-                } catch (Exception ex) {
-                    Log.e("INTERNA", "Error escribindo no ficheiro");
+                    } catch (Exception ex) {
+                        Log.e("INTERNA", "Error escribindo no ficheiro");
+                    }
+                }else{
+                    try {
+                        File subdir = new File(getFilesDir()+"/"+directory_et.getText().toString());
+                        subdir.mkdirs();
+                        File ruta = new File(subdir,nomeFicheiro);
+                        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(ruta,!(cb.isChecked())));
+
+                        osw.write(sentences_et.getText() + "\n");
+                        osw.close();
+
+                    } catch (Exception ex) {
+                        Log.e("INTERNA", "Error escribindo no ficheiro");
+                    }
                 }
             }
         }else if(sd_rb.isChecked()) {
@@ -202,24 +217,46 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             String linha = "";
             tv.setText(linha);
             nomeFicheiro = file_et.getText().toString();
-            try {
+            if(directory_et.getText().toString().equals("")) {
+                try {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(nomeFicheiro)));
 
-                BufferedReader br = new BufferedReader(new InputStreamReader(openFileInput(nomeFicheiro)));
+                    while ((linha = br.readLine()) != null)
+                        tv.append(linha + "\n");
 
-                while ((linha = br.readLine()) != null)
-                    tv.append(linha + "\n");
+                    br.close();
 
-                br.close();
+                } catch (Exception ex) {
+                    if (nomeFicheiro.equals("")) {
+                        Toast.makeText(this, "Error reading file: " + getFilesDir(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Error reading file: " + getFilesDir() + "/" + nomeFicheiro, Toast.LENGTH_SHORT).show();
+                    }
 
-            } catch (Exception ex) {
-                if(nomeFicheiro.equals("")) {
-                    Toast.makeText(this, "Error reading file: " + getFilesDir(), Toast.LENGTH_SHORT).show();
-                }else{
-                    Toast.makeText(this, "Error reading file: " + getFilesDir() +"/"+ nomeFicheiro, Toast.LENGTH_SHORT).show();
+                    Log.e("INTERNA", "Erro lendo o ficheiro. ");
+
                 }
+            }else{
+                File subdir = new File(getFilesDir()+"/"+directory_et.getText().toString());
+                File ruta = new File(subdir,nomeFicheiro);
+                try {
+                    BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ruta)));
 
-                Log.e("INTERNA", "Erro lendo o ficheiro. ");
+                    while ((linha = br.readLine()) != null)
+                        tv.append(linha + "\n");
 
+                    br.close();
+
+                } catch (Exception ex) {
+                    if (nomeFicheiro.equals("")) {
+                        Toast.makeText(this, "Error reading file: " + subdir.toString(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Error reading file: " + subdir.toString() + "/" + nomeFicheiro, Toast.LENGTH_SHORT).show();
+                    }
+
+                    Log.e("INTERNA", "Erro lendo o ficheiro. ");
+
+                }
             }
         }else if(sd_rb.isChecked()){
             nomeFicheiro = file_et.getText().toString();
@@ -253,7 +290,12 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             Toast.makeText(this,"You can't delete in RAW memory",Toast.LENGTH_LONG).show();
         }else if(internal_rb.isChecked()){
             nomeFicheiro = file_et.getText().toString();
-            File directorio_app = getFilesDir();
+            File directorio_app;
+            if(directory_et.getText().toString().equals("")) {
+                directorio_app = getFilesDir();
+            }else{
+                directorio_app = new File(getFilesDir()+"/"+directory_et.getText().toString());
+            }
             File ruta_completa = new File(directorio_app, "/" + nomeFicheiro);
 
             if (ruta_completa.delete()) {
@@ -303,8 +345,15 @@ public class U5_Z_A16AlejandroBP extends AppCompatActivity {
             tv.append("  File: ola\n");
         }else if(internal_rb.isChecked()){
             nomeFicheiro = file_et.getText().toString();
-            File directorio_app = getFilesDir();
-
+            File directorio_app;
+            if(directory_et.getText().toString().equals("")) {
+                directorio_app = getFilesDir();
+            }else {
+                directorio_app = new File(getFilesDir()+"/"+directory_et.getText().toString());
+            }
+            if(!directorio_app.exists()){
+                Toast.makeText(this, "Error listing file: "+directorio_app.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            }
             tv.append(directorio_app.getAbsolutePath() + " Content:");
             try {
                 String[] files = directorio_app.list();
